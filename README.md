@@ -1,6 +1,6 @@
 # pyrastitcher
 
-**pyrastitcher** is a Python 2 and 3 module that provides a Python interface to the amazing [Terastitcher](https://github.com/abria/TeraStitcher) package. **pyrastitcher** does not install Terastitcher, nor does it make any assumptions about your installation. `terastitcher` should be on your system path, but doesn't have to be — see the documentation (which, of course, doesn't exist yet).
+**pyrastitcher** is a Python 2 and 3 module that provides a Python interface to the [TeraStitcher](https://github.com/abria/TeraStitcher) system. **pyrastitcher** does not install TeraStitcher, nor does it make any assumptions about your installation. `terastitcher` should be on your system path, but doesn't have to be — see the documentation [here](https://github.com/j6k4m8/pyrastitcher/wiki/Getting-Started).
 
 ## Installation
 Currently, the only way to install is to clone this repository and pip install from the local directory:

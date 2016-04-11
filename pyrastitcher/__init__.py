@@ -20,13 +20,13 @@ class Pyrastitcher:
             kwargs.get('terastitcher_path', 'terastitcher')
         )
 
-        self._show_output = kwargs.get('show_output', False)
+        self._verbose = kwargs.get('verbose', False)
 
         self._last_xml = ""
         self._tmp_files = []
 
     def _output(self, output):
-        if self._show_output:
+        if self._verbose:
             sys.stderr.write(output)
 
     def _clean_up_files(self):
