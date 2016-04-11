@@ -235,9 +235,6 @@ class Pyrastitcher:
         if xml is None:
             xml = self._last_xml
 
-        if threshold > 1 or threshold < 0:
-            raise ValueError("Argument 'threshold' must be between 0 and 1.")
-
         tmpf_in = self._generate_tempfile()
         with open(tmpf_in, 'w+b') as tfni:
             tfni.write(xml)
