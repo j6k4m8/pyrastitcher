@@ -243,11 +243,12 @@ class Pyrastitcher:
             self.path,
             '--merge',
             '--projin={}'.format(tmpf_in),
-            '--volout={}'.format(volout),
-            '--volout_plugin="TiledXY|2Dseries"',
-            '--imout_format="tif"'
+            '--volout={}'.format(volout)
         ])
 
         self._delete_tmpfile(tmpf_in)
         self._output(output)
         return True
+
+    def run(self, volin, refs, voxel_size, threshold, volout):
+        pass
