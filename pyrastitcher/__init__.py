@@ -8,110 +8,130 @@ version = "0.0.1"
 
 _valid_refs = ['x', 'y', 'z', '-x', '-y', '-z']
 
+class Pyrastitcher:
 
-def _generate_tempfile():
-    return os.path.expanduser(
-        "~/pyrastitcher-" + str(uuid.uuid4()) + ".xml"
-    )
+    def __init__(self, **kwargs):
+        """
+        Generates a new Pyrastitcher class. Generally, you can just run this
+        with no arguments, but if you need to specify the path of the binary,
+        then pass in `terastitcher_path`.
+        """
+        self.path = os.path.expanduser(
+            kwargs.get('terastitcher_path', 'terastitcher')
+        )
+
+        self._last_xml = ""
+        self._tmp_files = []
+
+    def _clean_up_files(self):
+        for f in self._tmp_files:
+            self._delete_tmpfile(f)
+
+    def _delete_tmpfile(f):
+        if f in self._tmp_files:
+            os.remove(f)
+
+    def _generate_tempfile(self):
+        f = os.path.expanduser(
+            "~/pyrastitcher-" + str(uuid.uuid4()) + ".xml"
+        )
+        self._tmp_files.append(f)
+        return f
+
+    def import_folders(self, volin, refs, voxel_size, **kwargs):
+        """
+        Imports into Terastitcher using the "Import from two-level heirarchy of
+        folders" protocol from the documentation.
+
+        Arguments:
+            volin (str): The path to the root directory of files.
+            refs (int[3] : ('x', 'y', 'z')): The reference system.
+            voxel_size (float[3] : (1, 1, 1)): The voxel size, in microns.
+            volin_plugin (str : "TiledXY|2Dseries"): The plugin to use
+            imin_plugin (str : "tiff2D"): The imin plugin to use
+
+        Returns:
+            (str, str): (output, XML)
+        """
+
+        # Verify that volin is valid
+        if not (os.path.isdir(volin) and os.path.exists(volin)):
+            raise ValueError("volin {} is not a valid directory.".format(volin))
+
+        # Generate a random filename in which to store the XML output from
+        # Terastitcher. Can't use tempfiles for some reason...
+        # TODO: Why can't we use tempfiles?
+        tempfile_name = self._generate_tempfile()
+
+        # We sanitize refs by lower-casing.
+        refs = [r.lower() for r in refs]
+        if len(refs) != 3 or sum([refs[d] in _valid_refs for d in range(3)]) != 3:
+            raise ValueError("'refs' argument must be an iterable of length 3 " +
+                             "of values in {x, y, z, -x, -y, -z}.")
+
+        # Now we sanitize voxel_size by coercing to floats:
+        voxel_size = [float(v) for v in voxel_size]
+
+        # Now we can run the import.
+        output = subprocess.check_output([
+            self.path,
+            '--import',
+            '--volin={}'.format(volin),
+            '--ref1={}'.format(refs[0]),
+            '--ref2={}'.format(refs[1]),
+            '--ref3={}'.format(refs[2]),
+            '--vxl1={}'.format(voxel_size[0]),
+            '--vxl2={}'.format(voxel_size[1]),
+            '--vxl3={}'.format(voxel_size[2]),
+            '--projout={}'.format(tempfile_name)
+        ])
+
+        xmlf = open(tempfile_name, 'rb')
+        xmlf.seek(0)
+        xml = xmlf.read()
+        self._last_xml = xml
+
+        # Clean up after ourselves.
+        self._delete_tmpfile(tempfile_name)
+        sys.stderr.write(output)
+        return xml
 
 
-def import_folders(volin, refs, voxel_size, **kwargs):
-    """
-    Imports into Terastitcher using the "Import from two-level heirarchy of
-    folders" protocol from the documentation.
+    def align(xml=None, **kwargs):
+        """
+        Runs the alignment algorithm (--displcompute).
 
-    Arguments:
-        volin (str): The path to the root directory of files.
-        refs (int[3] : ('x', 'y', 'z')): The reference system.
-        voxel_size (float[3] : (1, 1, 1)): The voxel size, in microns.
-        volin_plugin (str : "TiledXY|2Dseries"): The plugin to use
-        imin_plugin (str : "tiff2D"): The imin plugin to use
+        Arguments:
+            xml (str): The XML descriptor (generally, it came from an above import)
 
-    Returns:
-        (str, str): (output, XML)
-    """
+        Returns:
+            str: The XML projout.
+        """
+        # TODO: kwargs. There's more than zero of them. (e.g. subvoldim)
 
-    terastitcher = os.path.expanduser(
-        kwargs.get('terastitcher_path', 'terastitcher')
-    )
+        if xml is None:
+            xml = self._last_xml
 
-    # Verify that volin is valid
-    if not (os.path.isdir(volin) and os.path.exists(volin)):
-        raise ValueError("volin {} is not a valid directory.".format(volin))
+        tmpf_in = self._generate_tempfile()
+        with open(tmpf_in, 'w+b') as tfni:
+            tfni.write(xml)
 
-    # Generate a random filename in which to store the XML output from
-    # Terastitcher. Can't use tempfiles for some reason...
-    # TODO: Why can't we use tempfiles?
-    tempfile_name = _generate_tempfile()
+        tmpf_out = self._generate_tempfile()
 
-    # We sanitize refs by lower-casing.
-    refs = [r.lower() for r in refs]
-    if len(refs) != 3 or sum([refs[d] in _valid_refs for d in range(3)]) != 3:
-        raise ValueError("'refs' argument must be an iterable of length 3 " +
-                         "of values in {x, y, z, -x, -y, -z}.")
+        output = subprocess.check_output([
+            terastitcher,
+            '--displcompute',
+            '--projin="{}"'.format(tmpf_in),
+            '--projout={}'.format(tmpf_out)
+        ])
 
-    # Now we sanitize voxel_size by coercing to floats:
-    voxel_size = [float(v) for v in voxel_size]
+        xmlf = open(tmpf_out, 'rb')
+        xmlf.seek(0)
+        xml = xmlf.read()
 
-    # Now we can run the import.
-    output = subprocess.check_output([
-        terastitcher,
-        '--import',
-        '--volin={}'.format(volin),
-        '--ref1={}'.format(refs[0]),
-        '--ref2={}'.format(refs[1]),
-        '--ref3={}'.format(refs[2]),
-        '--vxl1={}'.format(voxel_size[0]),
-        '--vxl2={}'.format(voxel_size[1]),
-        '--vxl3={}'.format(voxel_size[2]),
-        '--projout={}'.format(tempfile_name)
-    ])
+        self._last_xml = xml
 
-    xmlf = open(tempfile_name, 'rb')
-    xmlf.seek(0)
-    xml = xmlf.read()
-
-    # Clean up after ourselves.
-    os.remove(tempfile_name)
-    sys.stderr.write(output)
-    return xml
-
-
-def align(xml, **kwargs):
-    """
-    Runs the alignment algorithm (--displcompute).
-
-    Arguments:
-        xml (str): The XML descriptor (generally, it came from an above import)
-
-    Returns:
-        str: The XML projout.
-    """
-
-    # TODO: kwargs. There's more than zero of them. (e.g. subvoldim)
-
-    terastitcher = os.path.expanduser(
-        kwargs.get('terastitcher_path', 'terastitcher')
-    )
-
-    tmpf_in = _generate_tempfile()
-    with open(tmpf_in, 'w+b') as tfni:
-        tfni.write(xml)
-
-    tmpf_out = _generate_tempfile()
-
-    output = subprocess.check_output([
-        terastitcher,
-        '--displcompute',
-        '--projin="{}"'.format(tmpf_in),
-        '--projout={}'.format(tmpf_out)
-    ])
-
-    xmlf = open(tmpf_out, 'rb')
-    xmlf.seek(0)
-    xml = xmlf.read()
-
-    os.remove(tmpf_in)
-    os.remove(tmpf_out)
-    sys.stderr.write(output)
-    return xml
+        self._delete_tmpfile(tmpf_in)
+        self._delete_tmpfile(tmpf_out)
+        sys.stderr.write(output)
+        return xml
