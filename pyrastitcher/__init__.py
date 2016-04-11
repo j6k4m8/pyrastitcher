@@ -8,6 +8,13 @@ version = "0.0.1"
 
 _valid_refs = ['x', 'y', 'z', '-x', '-y', '-z']
 
+
+def _generate_tempfile():
+    return os.path.expanduser(
+        "~/pyrastitcher-" + str(uuid.uuid4()) + ".xml"
+    )
+
+
 def import_folders(volin, refs, voxel_size, **kwargs):
     """
     Imports into Terastitcher using the "Import from two-level heirarchy of
@@ -35,9 +42,7 @@ def import_folders(volin, refs, voxel_size, **kwargs):
     # Generate a random filename in which to store the XML output from
     # Terastitcher. Can't use tempfiles for some reason...
     # TODO: Why can't we use tempfiles?
-    tempfile_name = os.path.expanduser(
-        "~/pyrastitcher-" + str(uuid.uuid4()) + ".xml"
-    )
+    tempfile_name = _generate_tempfile()
     xmlf = open(tempfile_name, 'w+b')
 
     # We sanitize refs by lower-casing.
@@ -50,8 +55,7 @@ def import_folders(volin, refs, voxel_size, **kwargs):
     voxel_size = [float(v) for v in voxel_size]
 
     # Now we can run the import.
-
-    command = [
+    output = subprocess.check_output([
         terastitcher,
         '--import',
         '--volin={}'.format(volin),
@@ -62,9 +66,7 @@ def import_folders(volin, refs, voxel_size, **kwargs):
         '--vxl2={}'.format(voxel_size[1]),
         '--vxl3={}'.format(voxel_size[2]),
         '--projout={}'.format(xmlf.name)
-    ]
-
-    output = subprocess.check_output(command)
+    ])
 
     xmlf.seek(0)
     xml = xmlf.read()
@@ -73,3 +75,11 @@ def import_folders(volin, refs, voxel_size, **kwargs):
     os.remove(tempfile_name)
     sys.stderr.write(output)
     return xml
+
+
+def align(xml):
+    """
+    Runs the alignment algorithm (--displcompute).
+
+    Arguments:
+        xml (str): The XML descriptor
