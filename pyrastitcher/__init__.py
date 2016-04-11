@@ -1,6 +1,8 @@
 import uuid
 import subprocess
 import os
+import sys
+
 
 version = "0.0.1"
 
@@ -69,4 +71,5 @@ def import_folders(volin, refs, voxel_size, **kwargs):
 
     # Clean up after ourselves.
     os.remove(tempfile_name)
-    return (output, xml)
+    sys.stderr.write(output)
+    return xml
