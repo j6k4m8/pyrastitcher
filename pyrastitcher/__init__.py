@@ -31,9 +31,9 @@ def import_folders(volin, refs, voxel_size, **kwargs):
         (str, str): (output, XML)
     """
 
-    terastitcher = kwargs.get('terastitcher_path', 'terastitcher')
-
-    terastitcher = os.path.expanduser(terastitcher)
+    terastitcher = os.path.expanduser(
+        kwargs.get('terastitcher_path', 'terastitcher')
+    )
 
     # Verify that volin is valid
     if not (os.path.isdir(volin) and os.path.exists(volin)):
@@ -43,7 +43,6 @@ def import_folders(volin, refs, voxel_size, **kwargs):
     # Terastitcher. Can't use tempfiles for some reason...
     # TODO: Why can't we use tempfiles?
     tempfile_name = _generate_tempfile()
-    xmlf = open(tempfile_name, 'w+b')
 
     # We sanitize refs by lower-casing.
     refs = [r.lower() for r in refs]
@@ -65,9 +64,10 @@ def import_folders(volin, refs, voxel_size, **kwargs):
         '--vxl1={}'.format(voxel_size[0]),
         '--vxl2={}'.format(voxel_size[1]),
         '--vxl3={}'.format(voxel_size[2]),
-        '--projout={}'.format(xmlf.name)
+        '--projout={}'.format(tempfile_name)
     ])
 
+    xmlf = open(tempfile_name, 'rb')
     xmlf.seek(0)
     xml = xmlf.read()
 
@@ -77,9 +77,41 @@ def import_folders(volin, refs, voxel_size, **kwargs):
     return xml
 
 
-def align(xml):
+def align(xml, **kwargs):
     """
     Runs the alignment algorithm (--displcompute).
 
     Arguments:
-        xml (str): The XML descriptor
+        xml (str): The XML descriptor (generally, it came from an above import)
+
+    Returns:
+        str: The XML projout.
+    """
+
+    # TODO: kwargs. There's more than zero of them. (e.g. subvoldim)
+
+    terastitcher = os.path.expanduser(
+        kwargs.get('terastitcher_path', 'terastitcher')
+    )
+
+    tmpf_in = _generate_tempfile()
+    with open(tmpf_in, 'w+b') as tfni:
+        tfni.write(xml)
+
+    tmpf_out = _generate_tempfile()
+
+    output = subprocess.check_output([
+        terastitcher,
+        '--displcompute',
+        '--projin="{}"'.format(tmpf_in),
+        '--projout={}'.format(tmpf_out)
+    ])
+
+    xmlf = open(tmpf_out, 'rb')
+    xmlf.seek(0)
+    xml = xmlf.read()
+
+    os.remove(tmpf_in)
+    os.remove(tmpf_out)
+    sys.stderr.write(output)
+    return xml
