@@ -1,17 +1,20 @@
 # pyrastitcher
 
-[![](https://img.shields.io/pypi/v/ndio.svg)](https://pypi.python.org/pypi/ndio) —
-[![Build Status](https://travis-ci.org/neurodata/ndio.svg?branch=master)](https://travis-ci.org/neurodata/ndio)
+<!-- [![](https://img.shields.io/pypi/v/ndio.svg)](https://pypi.python.org/pypi/ndio) —
+[![Build Status](https://travis-ci.org/neurodata/ndio.svg?branch=master)](https://travis-ci.org/neurodata/ndio) -->
 
 **pyrastitcher** is a Python 2 and 3 module that provides a Python interface to the amazing [Terastitcher](https://github.com/abria/TeraStitcher) package. **pyrastitcher** does not install Terastitcher, nor does it make any assumptions about your installation. `terastitcher` should be on your system path.
 
 ## Installation
+Currently, the only way to install is to clone this repository and pip install from the local directory:
 
+```
+git clone git@github.com:j6k4m8/pyrastitcher.git pyrastitcher
+cd pyrastitcher
+pip install -U .
+```
 
-
-Generally, installation failures can be fixed by running the same line again, which, yeah, that's super janky, whatever. If that still fails, try cloning the repository from https://github.com/neurodata/ndio and running `pip install -r requirements.txt`.
-
-If you're still having no luck, try checking out the `travis.yml` file in the main directory of the repository — these are the lines required to get ndio up and running on a totally blank Ubuntu 14.04 machine.
+Once there's more stuff going on, I'll put this on PyPI to make it pip-installable.
 
 ## Getting Started
 
