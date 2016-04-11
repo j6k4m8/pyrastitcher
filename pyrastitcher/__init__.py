@@ -20,15 +20,22 @@ class Pyrastitcher:
             kwargs.get('terastitcher_path', 'terastitcher')
         )
 
+        self._show_output = kwargs.get('show_output', False)
+
         self._last_xml = ""
         self._tmp_files = []
+
+    def _output(self, output):
+        if self._show_output:
+            sys.stderr.write(output)
 
     def _clean_up_files(self):
         for f in self._tmp_files:
             self._delete_tmpfile(f)
 
-    def _delete_tmpfile(f):
+    def _delete_tmpfile(self, f):
         if f in self._tmp_files:
+            self._tmp_files.remove(f)
             os.remove(f)
 
     def _generate_tempfile(self):
@@ -93,11 +100,11 @@ class Pyrastitcher:
 
         # Clean up after ourselves.
         self._delete_tmpfile(tempfile_name)
-        sys.stderr.write(output)
+        self._output(output)
         return xml
 
 
-    def align(xml=None, **kwargs):
+    def align(self, xml=None, **kwargs):
         """
         Runs the alignment algorithm (--displcompute).
 
@@ -117,11 +124,10 @@ class Pyrastitcher:
             tfni.write(xml)
 
         tmpf_out = self._generate_tempfile()
-
         output = subprocess.check_output([
-            terastitcher,
+            self.path,
             '--displcompute',
-            '--projin="{}"'.format(tmpf_in),
+            '--projin={}'.format(tmpf_in),
             '--projout={}'.format(tmpf_out)
         ])
 
@@ -133,5 +139,5 @@ class Pyrastitcher:
 
         self._delete_tmpfile(tmpf_in)
         self._delete_tmpfile(tmpf_out)
-        sys.stderr.write(output)
+        self._output(output)
         return xml
