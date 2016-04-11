@@ -1,3 +1,0 @@
-# Pyrastitcher Documentation
-
-hi
