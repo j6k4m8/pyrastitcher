@@ -1,13 +1,6 @@
 import pyrastitcher
 
 VERSION = pyrastitcher.version
-"""
-roll with:
-
-git tag VERSION
-git push --tags
-python setup.py sdist upload -r pypi
-"""
 
 from distutils.core import setup
 setup(
