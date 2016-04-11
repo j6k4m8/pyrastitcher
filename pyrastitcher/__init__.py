@@ -104,17 +104,8 @@ class Pyrastitcher:
         return xml
 
 
-    def align(self, xml=None, **kwargs):
-        """
-        Runs the alignment algorithm (--displcompute).
-
-        Arguments:
-            xml (str): The XML descriptor (generally, it came from an above import)
-
-        Returns:
-            str: The XML projout.
-        """
-        # TODO: kwargs. There's more than zero of them. (e.g. subvoldim)
+    def _simple_in_out(self, cmd, xml=None, **kwargs):
+        # TODO: kwargs. There's more than zero of them.
 
         if xml is None:
             xml = self._last_xml
@@ -126,7 +117,7 @@ class Pyrastitcher:
         tmpf_out = self._generate_tempfile()
         output = subprocess.check_output([
             self.path,
-            '--displcompute',
+            cmd,
             '--projin={}'.format(tmpf_in),
             '--projout={}'.format(tmpf_out)
         ])
@@ -141,3 +132,125 @@ class Pyrastitcher:
         self._delete_tmpfile(tmpf_out)
         self._output(output)
         return xml
+
+    def align(self, xml=None, **kwargs):
+        """
+        Runs the alignment algorithm (--displcompute).
+
+        Arguments:
+            xml (str): The XML descriptor (generally, it came from an above import)
+
+        Returns:
+            str: The XML projout.
+        """
+        # TODO: kwargs. There's more than zero of them.
+
+        return self._simple_in_out('--displcompute', xml)
+
+    def project(self, xml=None, **kwargs):
+        """
+        Runs the project algorithm (--displproj).
+
+        Arguments:
+            xml (str): The XML descriptor (generally, it came from an above import)
+
+        Returns:
+            str: The XML projout.
+        """
+        # TODO: kwargs. There's more than zero of them.
+
+        return self._simple_in_out('--displproj', xml)
+
+    def threshold(self, threshold, xml=None, **kwargs):
+        """
+        Evaluate the displacement reliabilities ('--displthres'), based on a
+        threshold between 0 and 1.
+
+        Arguments:
+            xml (str): The XML descriptor (generally, it came from an above import)
+            threshold (float): The threshold for confidence between 0 and 1.
+
+        Returns:
+            str: The XML projout.
+        """
+        # TODO: kwargs. There's more than zero of them.
+
+        if xml is None:
+            xml = self._last_xml
+
+        if threshold > 1 or threshold < 0:
+            raise ValueError("Argument 'threshold' must be between 0 and 1.")
+
+        tmpf_in = self._generate_tempfile()
+        with open(tmpf_in, 'w+b') as tfni:
+            tfni.write(xml)
+
+        tmpf_out = self._generate_tempfile()
+        output = subprocess.check_output([
+            self.path,
+            '--displthres',
+            '--projin={}'.format(tmpf_in),
+            '--threshold={}'.format(threshold),
+            '--projout={}'.format(tmpf_out)
+        ])
+
+        xmlf = open(tmpf_out, 'rb')
+        xmlf.seek(0)
+        xml = xmlf.read()
+
+        self._last_xml = xml
+
+        self._delete_tmpfile(tmpf_in)
+        self._delete_tmpfile(tmpf_out)
+        self._output(output)
+        return xml
+
+    def place(self, xml=None, **kwargs):
+        """
+        Places the tiles according to the (--placetiles) protocol.
+
+        Arguments:
+            xml (str): The XML descriptor (generally, it came from an above import)
+
+        Returns:
+            str: The XML projout.
+        """
+        # TODO: kwargs. There's more than zero of them.
+
+        return self._simple_in_out('--placetiles', xml)
+
+    def merge(self, volout, xml=None, **kwargs):
+        """
+        Perform the actual merge. The default returns a series of 2D, full
+        scale tiff files. Future releases will permit multires and 3D.
+
+        Arguments:
+            volout (str): A path to the vol-out.
+
+        Returns:
+            boolean: True on success.
+        """
+        # TODO: kwargs. There's more than zero of them.
+
+        if xml is None:
+            xml = self._last_xml
+
+        if threshold > 1 or threshold < 0:
+            raise ValueError("Argument 'threshold' must be between 0 and 1.")
+
+        tmpf_in = self._generate_tempfile()
+        with open(tmpf_in, 'w+b') as tfni:
+            tfni.write(xml)
+
+        output = subprocess.check_output([
+            self.path,
+            '--merge',
+            '--projin={}'.format(tmpf_in),
+            '--volout={}'.format(volout),
+            '--volout_plugin="TiledXY|2Dseries"',
+            '--imout_format="tif"'
+        ])
+
+        self._delete_tmpfile(tmpf_in)
+        self._output(output)
+        return True
